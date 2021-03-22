@@ -1,3 +1,4 @@
+import { InternalServerErrorException } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
 import { Test } from '@nestjs/testing';
 import { MailService } from './mailLog.service';
@@ -63,9 +64,16 @@ describe('MailService', () => {
       expect(res).toEqual(log);
     });
     it('should throw error if nothing is passed', async () => {
-      mailmodel.create.mockResolvedValue(null);
-      const resData = await mailService.writeLog(null);
-      expect(resData).toThrowError();
+      mailmodel.create.mockRejectedValue(
+        new InternalServerErrorException('Failed to write logs in database'),
+      );
+      try {
+        await mailService.writeLog({});
+      } catch (err) {
+        expect(err).toEqual(
+          new InternalServerErrorException('Failed to write logs in database'),
+        );
+      }
     });
   });
 });
